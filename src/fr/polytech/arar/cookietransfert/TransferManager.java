@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 
-public class TransfertManager {
+public class TransferManager {
 	
 	@SuppressWarnings("ConstantConditions")
 	public static synchronized boolean receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
