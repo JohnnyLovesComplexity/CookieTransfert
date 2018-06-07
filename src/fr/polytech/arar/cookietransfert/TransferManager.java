@@ -1,6 +1,8 @@
 package fr.polytech.arar.cookietransfert;
 
 import fr.berger.enhancedlist.Couple;
+import fr.berger.enhancedlist.lexicon.Lexicon;
+import fr.berger.enhancedlist.lexicon.LexiconBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -19,6 +21,13 @@ public class TransferManager {
 	public static final int TFTP_MAX_DATA_LENGTH = 512;
 	public static final int ERROR_LIMIT = 3;
 	
+	/**
+	 * Send a READ REQUEST (RRQ) to the server at the address given in argument to get the file
+	 * @param localFile
+	 * @param distantFilePath
+	 * @param address
+	 * @return
+	 */
 	@SuppressWarnings("ConstantConditions")
 	public static ErrorCode receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
 		// Test parameters
@@ -47,6 +56,12 @@ public class TransferManager {
 			e.printStackTrace();
 			throw new IllegalArgumentException("The address " + address.getHostAddress() + " is not reachable.");
 		}*/
+		
+		// Create a list of block number
+		Lexicon<Byte> blockNumbers = new LexiconBuilder<Byte>()
+				.setAcceptNullValues(false)
+				.setAcceptDuplicates(false)
+				.createLexicon();
 		
 		// Prepare the request
 		String request = OPCode.RRQ.getRepresentation() + " " + distantFilePath;
@@ -86,19 +101,28 @@ public class TransferManager {
 				if (data != null && data.length >= 2) {
 					byte[] header = {data[0], data[1]};
 					
-					if (data.length > 2) {
-						byte[] fileData = new byte[data.length - 2];
-						System.arraycopy(data, 2, fileData, 0, data.length - 2);
+					if (header[0] != OPCode.DATA.getCode())
+						throw new RuntimeException("Receive request " + header[0] + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
+					
+					byte blockNumber = header[1];
+					
+					// If the blockNumber is new, add the data block. If not, resend a ACK
+					if (!blockNumbers.contains(blockNumber)) {
+						blockNumbers.add(blockNumber);
 						
-						try {
-							Files.write(localFile.toPath(), fileData);
-						} catch (IOException e) {
-							e.printStackTrace();
-							return ErrorCode.CANNOT_WRITE_LOCAL_FILE;
-						}
+						if (data.length > 2) {
+							byte[] fileData = new byte[data.length - 2];
+							System.arraycopy(data, 2, fileData, 0, data.length - 2);
+							
+							try {
+								Files.write(localFile.toPath(), fileData);
+							} catch (IOException e) {
+								e.printStackTrace();
+								return ErrorCode.CANNOT_WRITE_LOCAL_FILE;
+							}
+						} else
+							result = null; // if result = null, then stop while-loop
 					}
-					else
-						result = null; // if result = null, then all blocks have been received
 				}
 				else
 					result = null;
