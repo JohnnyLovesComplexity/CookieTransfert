@@ -1,4 +1,4 @@
-package org.jlc.arar.mozzarella;
+package fr.polytech.arar.cookietransfert;
 
 public abstract class ConnectionData {
 	

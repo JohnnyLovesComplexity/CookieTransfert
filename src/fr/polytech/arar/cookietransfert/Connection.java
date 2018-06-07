@@ -1,4 +1,4 @@
-package org.jlc.arar.mozzarella;
+package fr.polytech.arar.cookietransfert;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
