@@ -58,13 +58,14 @@ public class TransferManager {
 		}*/
 		
 		// Create a list of block number
-		Lexicon<Byte> blockNumbers = new LexiconBuilder<Byte>()
+		Lexicon<Byte> blockNumbers = new LexiconBuilder<>(Byte.class)
 				.setAcceptNullValues(false)
 				.setAcceptDuplicates(false)
 				.createLexicon();
 		
 		// Prepare the request
 		String request = OPCode.RRQ.getRepresentation() + " " + distantFilePath;
+		Log.println("TransferManager.receiveFile> Send \"" + request + "\" to server");
 		
 		// Create the UDP communication
 		Connection co = new Connection(address, TFTP_PORT);

@@ -13,9 +13,6 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
-import java.io.ByteArrayOutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -59,26 +56,26 @@ public class CookieTransfert extends Application {
                     t3.setStyle("-fx-fill: #b70d1b;-fx-font-weight:bold;");
                     t3.setText(">>ERROR : Data not valid " + "\n");
                     echange.getChildren().add(t3);
-                }else{
+                }
+                else {
                     inputAdresse.setText("");
                     inputFilename.setText("");
                     //TODO : echange
                     // STEP 1 : connexion to server
-                    try{
+                    try {
                         InetAddress inetAddress = InetAddress.getByName(serverIP);
-                    }catch(UnknownHostException e){
-                        Text t3 = new Text();
-                        t3.setStyle("-fx-fill: #b70d1b;-fx-font-weight:bold;");
-                        t3.setText(">>ERROR : Invalid adress " + "\n");
-                        echange.getChildren().add(t3);
+                        
+		                // STEP 2: sending request RRQ to pumpkin
+		                ErrorCode code = TransferManager.receiveFile("filename.txt", filename, inetAddress);
+		                Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
                     }
-                    // STEP 2: sending request RRQ to pumpkin
-
-                        /*// STEP 3: receive file
-                         cr_rv = receiveFile();
-
-                        // STEP 4: write file to local disc
-                        writeFile(byteOutOS, fileName);*/
+                    catch(UnknownHostException e) {
+		            Text t3 = new Text();
+		            t3.setStyle("-fx-fill: #b70d1b;-fx-font-weight:bold;");
+		            t3.setText(">>ERROR : Invalid adress " + "\n");
+		            echange.getChildren().add(t3);
+	            }
+                    
 
                     Text t3 = new Text();
                     t3.setStyle("-fx-fill: #874ab7;-fx-font-weight:bold;");
