@@ -10,7 +10,7 @@ public enum OPCode {
 	ACK(4),
 	ERROR(5);
 	
-	private int code;
+	private byte code;
 	private String representation;
 	
 	OPCode(int code, String representation) {

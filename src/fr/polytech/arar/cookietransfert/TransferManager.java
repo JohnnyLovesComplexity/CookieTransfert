@@ -11,7 +11,8 @@ import java.net.InetAddress;
 public class TransferManager {
 	
 	@SuppressWarnings("ConstantConditions")
-	public static synchronized boolean receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static synchronized OPCode receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
+		// Test parameters
 		if (localFile == null)
 			throw new NullPointerException("localFile must not be null");
 		
@@ -24,13 +25,18 @@ public class TransferManager {
 		if (address == null)
 			throw new NullPointerException("address must not be null");
 		
-		try {
+		// Test if the address is reachable
+		/*try {
 			if (!address.isReachable(500))
 				throw new IllegalArgumentException("The address \"" + address.getHostAddress() + "\" is not reachable.");
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException("The address \"" + address.getHostAddress() + "\" is not reachable.");
-		}
+		}*/
+		
+		//
+		
+		throw new NotImplementedException();
 	}
 	@SuppressWarnings("ConstantConditions")
 	public static synchronized boolean receiveFile(@Nullable String localFilePath, @NotNull String distantFilePath, @NotNull InetAddress address) {
