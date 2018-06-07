@@ -13,23 +13,29 @@ public enum OPCode {
 	private byte code;
 	private String representation;
 	
-	OPCode(int code, String representation) {
+	OPCode(byte code, String representation) {
 		setCode(code);
 		setRepresentation(representation);
 	}
-	OPCode(int code) {
+	OPCode(int code, String representation) {
+		this((byte) code, representation);
+	}
+	OPCode(byte code) {
 		setCode(code);
 		setRepresentation(name().toUpperCase());
+	}
+	OPCode(int code) {
+		this((byte) code);
 	}
 	
 	/* GETTERS & SETTERS */
 	
 	@Contract(pure = true)
-	public int getCode() {
+	public byte getCode() {
 		return code;
 	}
 	
-	private void setCode(int code) {
+	private void setCode(byte code) {
 		this.code = code;
 	}
 	
