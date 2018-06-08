@@ -45,7 +45,6 @@ public class CookieTransfert extends Application {
         scrollPane.setPrefSize(600,500);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
 
-
         submit.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -64,17 +63,17 @@ public class CookieTransfert extends Application {
                     // STEP 1 : connexion to server
                     try {
                         InetAddress inetAddress = InetAddress.getByName(serverIP);
-                        
+
 		                // STEP 2: sending request RRQ to pumpkin
 		                ErrorCode code = TransferManager.receiveFile("filename.txt", filename, inetAddress);
 		                Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
                     }
                     catch(UnknownHostException e) {
-		            Text t3 = new Text();
-		            t3.setStyle("-fx-fill: #b70d1b;-fx-font-weight:bold;");
-		            t3.setText(">>ERROR : Invalid adress " + "\n");
-		            echange.getChildren().add(t3);
-	            }
+                        Text t3 = new Text();
+                        t3.setStyle("-fx-fill: #b70d1b;-fx-font-weight:bold;");
+                        t3.setText(">>ERROR : Invalid adress " + "\n");
+                        echange.getChildren().add(t3);
+	                }
                     
 
                     Text t3 = new Text();

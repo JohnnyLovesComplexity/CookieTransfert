@@ -13,7 +13,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 public class TransferManager {
 	
@@ -64,8 +67,12 @@ public class TransferManager {
 				.createLexicon();
 		
 		// Prepare the request
-		String request = OPCode.RRQ.getRepresentation() + " " + distantFilePath;
-		Log.println("TransferManager.receiveFile> Send \"" + request + "\" to server");
+		String mode = "octet";
+		byte[] RRQ = createRequest(OPCode.RRQ.getCode(),localFile.getName(),mode);
+
+		String request = Arrays.toString(RRQ);
+
+		//Log.println("TransferManager.receiveFile> Send \"" + request + "\" to server"); //ligne qui provoque une exception
 		
 		// Create the UDP communication
 		Connection co = new Connection(address, TFTP_PORT);
@@ -82,6 +89,7 @@ public class TransferManager {
 			repetition = 0;
 			
 			// Send ACK
+			//byte[] ACK = { 0, OPCode.ACK.getCode(), (byte) (blockNumbers.size()+1)};
 			try {
 				co.answer(OPCode.ACK.getRepresentation());
 			} catch (OperationNotSupportedException e) {
@@ -104,6 +112,14 @@ public class TransferManager {
 					
 					if (header[0] != OPCode.DATA.getCode())
 						throw new RuntimeException("Receive request " + header[0] + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
+
+
+					/*if (header[1] == OPCode.ERROR.getCode()) {
+						String errorCode = new String(data, 3, 1);
+						//TODO : treat errors ErrorCode
+					} else if (header[1] == OPCode.DATA.getCode()) {
+
+					}*/
 					
 					byte blockNumber = header[1];
 					
@@ -156,4 +172,37 @@ public class TransferManager {
 		
 		return receiveFile(filename, distantFilePath, address);
 	}
+
+	private static byte[] createRequest(final byte opCode, final String fileName,
+								 final String mode) {
+		byte zeroByte = 0;
+		int rrqByteLength = 2 + fileName.length() + 1 + mode.length() + 1;
+		byte[] rrqByteArray = new byte[rrqByteLength];
+
+		int position = 0;
+		rrqByteArray[position] = zeroByte;
+		position++;
+		rrqByteArray[position] = opCode;
+		position++;
+		for (int i = 0; i < fileName.length(); i++) {
+			rrqByteArray[position] = (byte) fileName.charAt(i);
+			position++;
+		}
+		rrqByteArray[position] = zeroByte;
+		position++;
+		for (int i = 0; i < mode.length(); i++) {
+			rrqByteArray[position] = (byte) mode.charAt(i);
+			position++;
+		}
+		rrqByteArray[position] = zeroByte;
+		return rrqByteArray;
+	}
+
+	private boolean isLastPacket(DatagramPacket datagramPacket) {
+		if (datagramPacket.getLength() < 512)
+			return true;
+		else
+			return false;
+	}
+
 }
