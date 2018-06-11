@@ -90,7 +90,7 @@ public class TransferManager {
 			
 			// Receive a new block of data
 			result = co.receive();
-			Log.println("TransferManager.receiveFile> Received from " + result.getY().getAddress().getHostAddress() + " \"" + result.getY().getAddress().getCanonicalHostName() + "\" with port " + result.getY().getPort());
+			Log.println("TransferManager.receiveFile> Received from " + result.getY().getAddress().getHostAddress() + " \"" + result.getY().getAddress().getCanonicalHostName() + "\" with port " + result.getY().getPort() + ". The size of the answer is " + result.getY().getLength() + " byte(s).");
 			
 			if (result != null && result.getY() != null) {
 				byte[] data = result.getY().getData();
@@ -116,7 +116,7 @@ public class TransferManager {
 						
 						if (data.length > 4) {
 							byte[] fileData = getFileData(data);
-							Log.println("TransferManager.receiveFile> Answer received: [opCode=" + opCodeReceived + " (" + OPCode.from((byte) opCodeReceived) + ")] [blockNumber=" + blockNumberReceived + "] \"" + new String(fileData, StandardCharsets.UTF_8).replaceAll("\r\n|\n", " ") + "\"");
+							Log.println("TransferManager.receiveFile> Answer received: [opCode=" + opCodeReceived + " (" + OPCode.from((byte) opCodeReceived) + ")] [blockNumber=" + blockNumberReceived + "] \"" + new String(fileData, StandardCharsets.UTF_8).replaceAll("\r\n|\n", " ").replaceAll(new String(new char[] {'\0'}), "") + "\"");
 							
 							FileOutputStream fos = null;
 							

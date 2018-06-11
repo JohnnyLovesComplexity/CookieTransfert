@@ -9,19 +9,16 @@ import java.util.function.Function;
 
 public class Log {
 	
-	private static Lexicon<Function<String, Void>> logEvents = new LexiconBuilder<Function<String, Void>>()
+	private static Lexicon<ILog> logEvents = new LexiconBuilder<ILog>(ILog.class)
 			.setAcceptNullValues(false)
 			.setAcceptDuplicates(false)
-			.add(s -> {
-				System.out.print(s);
-				return null;
-			})
+			.add(System.out::print)
 			.createLexicon();
 	
 	public static void print(@Nullable String message) {
-		for (Function<String, Void> logEvent : logEvents) {
+		for (ILog logEvent : logEvents) {
 			if (logEvent != null)
-				logEvent.apply(message);
+				logEvent.log(message != null ? message : "(null)");
 		}
 	}
 	
@@ -29,7 +26,14 @@ public class Log {
 		print(message + "\n");
 	}
 	
-	public static void register(@NotNull Function<String, Void> runnable) {
-		logEvents.add(runnable);
+	@SuppressWarnings("ConstantConditions")
+	public static void register(@NotNull ILog runnable) {
+		if (runnable != null)
+			logEvents.add(runnable);
+	}
+	
+	public interface ILog {
+		
+		void log(@NotNull String message);
 	}
 }
