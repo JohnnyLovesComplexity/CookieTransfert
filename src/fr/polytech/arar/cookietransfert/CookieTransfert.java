@@ -25,12 +25,10 @@ public class CookieTransfert extends Application {
     private TextField inputAdresse = new TextField();
     private TextField inputFilename = new TextField();
     Button submit = new Button("Submit");
-
-    private final static int PACKET_SIZE = 516; //512 + 2 for the op_code + 2 for the number of the bloc
-
+    
     @Override
     public void start(Stage primaryStage) throws Exception {
-        inputAdresse.setText(/*"Adress"*/"192.168.43.234");
+        inputAdresse.setText(/*"Adress"*/"192.168.43.32");
         inputFilename.setText(/*"Filename"*/"cookie.txt");
         primaryStage.setTitle("CLIENT STF");
         Text t1 = new Text();

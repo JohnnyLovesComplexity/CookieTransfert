@@ -2,6 +2,7 @@ package fr.polytech.arar.cookietransfert;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public enum OPCode {
 	RRQ(1),
@@ -26,6 +27,19 @@ public enum OPCode {
 	}
 	OPCode(int code) {
 		this((byte) code);
+	}
+	
+	/* OPCODE METHOD */
+	
+	@Nullable
+	public static OPCode from(byte code) {
+		OPCode result = null;
+		
+		for (int i = 0, maxi = OPCode.values().length; i < maxi; i++)
+			if (OPCode.values()[i].getCode() == code)
+				result = OPCode.values()[i];
+		
+		return result;
 	}
 	
 	/* GETTERS & SETTERS */

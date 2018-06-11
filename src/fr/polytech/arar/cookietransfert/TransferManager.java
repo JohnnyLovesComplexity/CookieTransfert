@@ -8,13 +8,12 @@ import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.naming.OperationNotSupportedException;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 
@@ -72,7 +71,7 @@ public class TransferManager {
 
 		String request = Arrays.toString(RRQ);
 
-		Log.println("TransferManager.receiveFile> Sending \"" + request + "\" to server...");
+		Log.println("TransferManager.receiveFile> Sending \"" + request + "\" to server " + address + ":" + TFTP_PORT + "...");
 		
 		// Create the UDP communication
 		Connection co = new Connection(address, TFTP_PORT);
@@ -91,16 +90,17 @@ public class TransferManager {
 			
 			// Receive a new block of data
 			result = co.receive();
-			Log.println("TransferManager.receiveFile> Answer received: \"" + result.getX().replaceAll("\n", " ") + "\"");
+			Log.println("TransferManager.receiveFile> Received from " + result.getY().getAddress().getHostAddress() + " \"" + result.getY().getAddress().getCanonicalHostName() + "\" with port " + result.getY().getPort());
 			
 			if (result != null && result.getY() != null) {
 				byte[] data = result.getY().getData();
 				
-				if (data != null && data.length >= 2) {
-					byte[] header = {data[0], data[1]};
+				if (data != null && data.length >= 4) {
+					int opCodeReceived = getOpCode(data);
+					int blockNumberReceived = getBlockNumber(data);
 					
-					if (header[0] != OPCode.DATA.getCode())
-						throw new RuntimeException("Receive request " + header[0] + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
+					if (opCodeReceived != OPCode.DATA.getCode())
+						throw new RuntimeException("Receive request " + opCodeReceived + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
 
 
 					/*if (header[1] == OPCode.ERROR.getCode()) {
@@ -110,21 +110,33 @@ public class TransferManager {
 
 					}*/
 					
-					byte blockNumber = header[1];
-					
 					// If the blockNumber is new, add the data block. If not, resend a ACK
-					if (!blockNumbers.contains((int) blockNumber)) {
-						blockNumbers.add((int) blockNumber);
+					if (!blockNumbers.contains(blockNumberReceived)) {
+						blockNumbers.add(blockNumberReceived);
 						
-						if (data.length > 2) {
-							byte[] fileData = new byte[data.length - 2];
-							System.arraycopy(data, 2, fileData, 0, data.length - 2);
+						if (data.length > 4) {
+							byte[] fileData = getFileData(data);
+							Log.println("TransferManager.receiveFile> Answer received: [opCode=" + opCodeReceived + " (" + OPCode.from((byte) opCodeReceived) + ")] [blockNumber=" + blockNumberReceived + "] \"" + new String(fileData, StandardCharsets.UTF_8).replaceAll("\r\n|\n", " ") + "\"");
+							
+							FileOutputStream fos = null;
 							
 							try {
-								Files.write(localFile.toPath(), fileData);
+								// If the file does not exist, so don't append the data. Otherwise, append mode is enable
+								fos = new FileOutputStream(localFile, localFile.exists());
+								fos.write(fileData);
 							} catch (IOException e) {
 								e.printStackTrace();
 								return ErrorCode.CANNOT_WRITE_LOCAL_FILE;
+							}
+							// Finally, close the file output stream
+							finally {
+								if (fos != null) {
+									try {
+										fos.close();
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+								}
 							}
 						} else
 							result = null; // if result = null, then stop while-loop
@@ -141,7 +153,7 @@ public class TransferManager {
 				// Send ACK
 				byte[] blockNumbersBytes = {(byte) (blockNumbers.last() & 0xFF), (byte) ((blockNumbers.last() >> 8) & 0xFF)};
 				byte[] ACK = {0, OPCode.ACK.getCode(), blockNumbersBytes[0], blockNumbersBytes[1]};
-				Log.println("TransferManager.receiveFile> ACK = " + Arrays.toString(ACK));
+				Log.println("TransferManager.receiveFile> Send ACK = " + Arrays.toString(ACK));
 				try {
 					co.answer(/*OPCode.ACK.getRepresentation()*/ACK);
 				} catch (OperationNotSupportedException e) {
@@ -180,18 +192,17 @@ public class TransferManager {
 		return receiveFile(filename, distantFilePath, address);
 	}
 
-	private static byte[] createRequest(final byte opCode, final String fileName,
-								 final String mode) {
-		byte opCodes[] = new byte[] {0, opCode};
+	private static byte[] createRequest(final byte opCode, final String fileName, final String mode) {
+		byte opCodeFormatted[] = new byte[] {0, opCode};
 		
 		byte zeroByte = 0;
 		int rrqByteLength = 2 + fileName.length() + 1 + mode.length() + 1;
 		byte[] rrqByteArray = new byte[rrqByteLength];
 
 		int position = 0;
-		rrqByteArray[position] = opCodes[0];
+		rrqByteArray[position] = opCodeFormatted[0];
 		position++;
-		rrqByteArray[position] = opCodes[1];
+		rrqByteArray[position] = opCodeFormatted[1];
 		position++;
 		for (int i = 0; i < fileName.length(); i++) {
 			rrqByteArray[position] = (byte) fileName.charAt(i);
@@ -206,7 +217,68 @@ public class TransferManager {
 		rrqByteArray[position] = zeroByte;
 		return rrqByteArray;
 	}
-
+	
+	/**
+	 * Give the OpCode from {@code data}
+	 * @param data The received data to analyse
+	 * @return Return the OpCode found in {@code data}
+	 */
+	@SuppressWarnings("ConstantConditions")
+	private static int getOpCode(@NotNull byte[] data) {
+		if (data == null)
+			throw new NullPointerException();
+		
+		if (data.length < 2)
+			throw new IllegalArgumentException("data must be greater or equal to 2 bytes at least.");
+		
+		byte[] opCodesFormatted = { data[0], data[1] };
+		return ((opCodesFormatted[0] & 0xff) << 8) | (opCodesFormatted[1] & 0xFF);
+	}
+	
+	/**
+	 * Give the block number from {@code data}
+	 * @param data The received data to analyse
+	 * @return Return the block number found in {@code data}
+	 */
+	@SuppressWarnings("ConstantConditions")
+	private static int getBlockNumber(@NotNull byte[] data) {
+		if (data == null)
+			throw new NullPointerException();
+		
+		if (data.length < 4)
+			throw new IllegalArgumentException("data must be greater or equal to 4 bytes at least.");
+		
+		byte[] blockNumberFormatted = { data[2], data[3] };
+		return ((blockNumberFormatted[0] & 0xff) << 8) | (blockNumberFormatted[1] & 0xFF);
+	}
+	
+	/**
+	 * Give the file data from {@code data}
+	 * @param data The received data to analyse
+	 * @return Return the file data as a byte array found in {@code data}
+	 */
+	@SuppressWarnings("ConstantConditions")
+	@NotNull
+	private static byte[] getFileData(@NotNull byte[] data) {
+		if (data == null)
+			throw new NullPointerException();
+		
+		if (data.length < 4)
+			throw new IllegalArgumentException("data must be greater or equal to 4 bytes at least.");
+		
+		if (data.length == 4)
+			return new byte[0];
+		
+		byte[] fileData = new byte[data.length - 4];
+		System.arraycopy(data, 4, fileData, 0, data.length - 4);
+		return fileData;
+	}
+	
+	/**
+	 * Tell if the given datagram packet is the last
+	 * @param datagramPacket The packet to analyse
+	 * @return Return {@code true} if it is the last packet, {@code false} otherwise
+	 */
 	@SuppressWarnings("ConstantConditions")
 	private static boolean isLastPacket(@NotNull DatagramPacket datagramPacket) {
 		if (datagramPacket == null)
