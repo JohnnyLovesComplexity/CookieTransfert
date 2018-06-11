@@ -11,11 +11,14 @@ public class Log {
 	
 	private static Lexicon<Function<String, Void>> logEvents = new LexiconBuilder<Function<String, Void>>()
 			.setAcceptNullValues(false)
-			.setAcceptDuplicates(true)
+			.setAcceptDuplicates(false)
+			.add(s -> {
+				System.out.print(s);
+				return null;
+			})
 			.createLexicon();
 	
 	public static void print(@Nullable String message) {
-		System.out.print(message);
 		for (Function<String, Void> logEvent : logEvents) {
 			if (logEvent != null)
 				logEvent.apply(message);

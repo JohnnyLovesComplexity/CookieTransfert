@@ -61,37 +61,41 @@ public class TransferManager {
 		}*/
 		
 		// Create a list of block number
-		Lexicon<Byte> blockNumbers = new LexiconBuilder<>(Byte.class)
+		Lexicon<Integer> blockNumbers = new LexiconBuilder<>(Integer.class)
 				.setAcceptNullValues(false)
 				.setAcceptDuplicates(false)
 				.createLexicon();
 		
 		// Prepare the request
 		String mode = "octet";
-		byte[] RRQ = createRequest(OPCode.RRQ.getCode(),localFile.getName(),mode);
+		byte[] RRQ = createRequest(OPCode.RRQ.getCode(), distantFilePath, mode);
 
 		String request = Arrays.toString(RRQ);
 
-		//Log.println("TransferManager.receiveFile> Send \"" + request + "\" to server"); //ligne qui provoque une exception
+		Log.println("TransferManager.receiveFile> Sending \"" + request + "\" to server...");
 		
 		// Create the UDP communication
 		Connection co = new Connection(address, TFTP_PORT);
 		
 		// Send the request
-		co.send(request);
+		co.send(RRQ);
+		Log.println("TransferManager.receiveFile> Sent.");
 		
 		// Wait for an answer
 		Couple<String, DatagramPacket> result = co.receive();
+		Log.println("TransferManager.receiveFile> Answer received: \"" + result.getX() + "\"");
 		
 		// 'repetition' count the number of ACK-fail
 		int repetition = 0;
-		while (result != null && result.getY() != null && result.getY().getLength() >= TFTP_MAX_DATA_LENGTH) {
+		while (result != null && result.getY() != null && !isLastPacket(result.getY())) {
 			repetition = 0;
 			
 			// Send ACK
-			//byte[] ACK = { 0, OPCode.ACK.getCode(), (byte) (blockNumbers.size()+1)};
+			byte[] blockNumbersBytes = { (byte) (blockNumbers.last() & 0xFF), (byte) ((blockNumbers.last() >> 8) & 0xFF) };
+			byte[] ACK = { 0, OPCode.ACK.getCode(), blockNumbersBytes[0], blockNumbersBytes[1] };
+			Log.println("TransferManager.receiveFile> ACK = " + Arrays.toString(ACK));
 			try {
-				co.answer(OPCode.ACK.getRepresentation());
+				co.answer(/*OPCode.ACK.getRepresentation()*/ACK);
 			} catch (OperationNotSupportedException e) {
 				System.err.println("FATAL ERROR: CANNOT SEND ACK TO SERVER " + address.getHostAddress());
 				e.printStackTrace();
@@ -124,8 +128,8 @@ public class TransferManager {
 					byte blockNumber = header[1];
 					
 					// If the blockNumber is new, add the data block. If not, resend a ACK
-					if (!blockNumbers.contains(blockNumber)) {
-						blockNumbers.add(blockNumber);
+					if (!blockNumbers.contains((int) blockNumber)) {
+						blockNumbers.add((int) blockNumber);
 						
 						if (data.length > 2) {
 							byte[] fileData = new byte[data.length - 2];
@@ -175,14 +179,16 @@ public class TransferManager {
 
 	private static byte[] createRequest(final byte opCode, final String fileName,
 								 final String mode) {
+		byte opCodes[] = new byte[] {0, opCode};
+		
 		byte zeroByte = 0;
 		int rrqByteLength = 2 + fileName.length() + 1 + mode.length() + 1;
 		byte[] rrqByteArray = new byte[rrqByteLength];
 
 		int position = 0;
-		rrqByteArray[position] = zeroByte;
+		rrqByteArray[position] = opCodes[0];
 		position++;
-		rrqByteArray[position] = opCode;
+		rrqByteArray[position] = opCodes[1];
 		position++;
 		for (int i = 0; i < fileName.length(); i++) {
 			rrqByteArray[position] = (byte) fileName.charAt(i);
@@ -198,11 +204,11 @@ public class TransferManager {
 		return rrqByteArray;
 	}
 
-	private boolean isLastPacket(DatagramPacket datagramPacket) {
-		if (datagramPacket.getLength() < 512)
-			return true;
-		else
-			return false;
+	@SuppressWarnings("ConstantConditions")
+	private static boolean isLastPacket(@NotNull DatagramPacket datagramPacket) {
+		if (datagramPacket == null)
+			throw new NullPointerException();
+		
+		return datagramPacket.getLength() < TFTP_MAX_DATA_LENGTH + 4;
 	}
-
 }

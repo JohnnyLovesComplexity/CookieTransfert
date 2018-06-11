@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.function.Function;
 
 public class CookieTransfert extends Application {
     public String serverIP = "127.0.0.1";
@@ -29,8 +30,8 @@ public class CookieTransfert extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        inputAdresse.setText("Adress");
-        inputFilename.setText("Filename");
+        inputAdresse.setText(/*"Adress"*/"192.168.43.234");
+        inputFilename.setText(/*"Filename"*/"cookie.txt");
         primaryStage.setTitle("CLIENT STF");
         Text t1 = new Text();
         t1.setStyle("-fx-fill: #4F8A10;-fx-font-weight:bold;");
@@ -60,6 +61,16 @@ public class CookieTransfert extends Application {
                     inputAdresse.setText("");
                     inputFilename.setText("");
                     //TODO : echange
+                    Log.register(new Function<String, Void>() {
+	                    @Override
+	                    public Void apply(String s) {
+		                    Text text = new Text();
+		                    text.setStyle("-fx-fill: #b70d1b;-fx-font-weight:bold;");
+		                    text.setText(s);
+	                    	echange.getChildren().add(new Text(s));
+		                    return null;
+	                    }
+                    });
                     // STEP 1 : connexion to server
                     try {
                         InetAddress inetAddress = InetAddress.getByName(serverIP);

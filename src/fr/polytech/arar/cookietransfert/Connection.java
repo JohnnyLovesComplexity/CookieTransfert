@@ -46,13 +46,13 @@ public class Connection {
 	
 	/* CONNECTION METHODS */
 	
-	public synchronized boolean send(@NotNull String data) {
+	public synchronized boolean send(@NotNull byte[] data) {
 		boolean result;
 		
 		try {
 			if (getDatagramSocket() == null)
 				setDatagramSocket(new DatagramSocket());
-			DatagramPacket dp = new DatagramPacket(data.getBytes(), data.length(), getAddress(), getPort());
+			DatagramPacket dp = new DatagramPacket(data, data.length, getAddress(), getPort());
 			getDatagramSocket().send(dp);
 			result = true;
 		} catch (IOException e) {
@@ -61,6 +61,9 @@ public class Connection {
 		}
 		
 		return result;
+	}
+	public synchronized boolean send(@NotNull String data) {
+		return send(data.getBytes());
 	}
 	public synchronized boolean send(@NotNull InetAddress address, int port, @NotNull String data) {
 		setAddress(address);
@@ -78,17 +81,17 @@ public class Connection {
 	
 	@Nullable
 	public synchronized Couple<String, DatagramPacket> receive() {
-		byte[] data = new byte[MAX_DATA_BYTE_LENGTH];
+		byte[] data = new byte[MAX_DATA_BYTE_LENGTH + 4];
 		
 		DatagramPacket dp = null;
 		
 		try {
 			if (getDatagramSocket() == null)
-				setDatagramSocket(new DatagramSocket(getPort()));
-			dp = new DatagramPacket(data, data.length);
+				setDatagramSocket(new DatagramSocket());
+			dp = new DatagramPacket(data, MAX_DATA_BYTE_LENGTH + 4, getAddress(), TransferManager.TFTP_PORT);
 			getDatagramSocket().receive(dp);
 			setLastReceivedPacket(dp);
-			data = dp.getData();
+			//data = dp.getData();
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			return null;
@@ -114,15 +117,15 @@ public class Connection {
 		return receive();
 	}
 	
-	public synchronized boolean answer(@NotNull String data) throws OperationNotSupportedException {
+	public synchronized boolean answer(@NotNull byte[] data) throws OperationNotSupportedException {
 		if (getLastReceivedPacket() == null)
-			throw new OperationNotSupportedException("Cannot answer because there is no body to speak to... #alone");
+			throw new OperationNotSupportedException("Cannot answer because there is no body to speak to... #ForeverAlone");
 		
 		boolean result;
 		
 		try {
-			DatagramSocket ds = new DatagramSocket(/*getLastReceivedPacket().getPort()*/);
-			DatagramPacket dp = new DatagramPacket(data.getBytes(), data.length(), getLastReceivedPacket().getAddress(), getLastReceivedPacket().getPort());
+			DatagramSocket ds = new DatagramSocket();
+			DatagramPacket dp = new DatagramPacket(data, data.length, getLastReceivedPacket().getAddress(), getLastReceivedPacket().getPort());
 			ds.send(dp);
 			result = true;
 		} catch (IOException e) {
@@ -131,6 +134,10 @@ public class Connection {
 		}
 		
 		return result;
+	}
+	
+	public synchronized boolean answer(@NotNull String data) throws OperationNotSupportedException {
+		return answer(data.getBytes());
 	}
 	public synchronized boolean answer(@NotNull DatagramPacket lastReceivedPacket, @NotNull String data) throws OperationNotSupportedException {
 		setLastReceivedPacket(lastReceivedPacket);
