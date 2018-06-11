@@ -82,31 +82,16 @@ public class TransferManager {
 		Log.println("TransferManager.receiveFile> Sent.");
 		
 		// Wait for an answer
-		Couple<String, DatagramPacket> result = co.receive();
-		Log.println("TransferManager.receiveFile> Answer received: \"" + result.getX() + "\"");
+		Couple<String, DatagramPacket> result;
 		
 		// 'repetition' count the number of ACK-fail
 		int repetition = 0;
-		while (result != null && result.getY() != null && !isLastPacket(result.getY())) {
+		do {
 			repetition = 0;
-			
-			// Send ACK
-			byte[] blockNumbersBytes = { (byte) (blockNumbers.last() & 0xFF), (byte) ((blockNumbers.last() >> 8) & 0xFF) };
-			byte[] ACK = { 0, OPCode.ACK.getCode(), blockNumbersBytes[0], blockNumbersBytes[1] };
-			Log.println("TransferManager.receiveFile> ACK = " + Arrays.toString(ACK));
-			try {
-				co.answer(/*OPCode.ACK.getRepresentation()*/ACK);
-			} catch (OperationNotSupportedException e) {
-				System.err.println("FATAL ERROR: CANNOT SEND ACK TO SERVER " + address.getHostAddress());
-				e.printStackTrace();
-				repetition++;
-				
-				if (repetition >= ERROR_LIMIT)
-					return ErrorCode.TRANSFER_ERROR;
-			}
 			
 			// Receive a new block of data
 			result = co.receive();
+			Log.println("TransferManager.receiveFile> Answer received: \"" + result.getX().replaceAll("\n", " ") + "\"");
 			
 			if (result != null && result.getY() != null) {
 				byte[] data = result.getY().getData();
@@ -150,7 +135,25 @@ public class TransferManager {
 			}
 			else
 				result = null;
-		}
+			
+			
+			if (result != null) {
+				// Send ACK
+				byte[] blockNumbersBytes = {(byte) (blockNumbers.last() & 0xFF), (byte) ((blockNumbers.last() >> 8) & 0xFF)};
+				byte[] ACK = {0, OPCode.ACK.getCode(), blockNumbersBytes[0], blockNumbersBytes[1]};
+				Log.println("TransferManager.receiveFile> ACK = " + Arrays.toString(ACK));
+				try {
+					co.answer(/*OPCode.ACK.getRepresentation()*/ACK);
+				} catch (OperationNotSupportedException e) {
+					System.err.println("FATAL ERROR: CANNOT SEND ACK TO SERVER " + address.getHostAddress());
+					e.printStackTrace();
+					repetition++;
+					
+					if (repetition >= ERROR_LIMIT)
+						return ErrorCode.TRANSFER_ERROR;
+				}
+			}
+		} while (result != null && !isLastPacket(result.getY()));
 		
 		return ErrorCode.OK;
 	}

@@ -81,17 +81,17 @@ public class Connection {
 	
 	@Nullable
 	public synchronized Couple<String, DatagramPacket> receive() {
-		byte[] data = new byte[MAX_DATA_BYTE_LENGTH + 4];
+		byte[] data = new byte[MAX_DATA_BYTE_LENGTH + 4/*2048*/];
 		
-		DatagramPacket dp = null;
+		DatagramPacket dp1 = null;
 		
 		try {
 			if (getDatagramSocket() == null)
 				setDatagramSocket(new DatagramSocket());
-			dp = new DatagramPacket(data, MAX_DATA_BYTE_LENGTH + 4, getAddress(), TransferManager.TFTP_PORT);
-			getDatagramSocket().receive(dp);
-			setLastReceivedPacket(dp);
-			//data = dp.getData();
+			dp1 = new DatagramPacket(data, data.length);
+			getDatagramSocket().receive(dp1);
+			setLastReceivedPacket(dp1);
+			//data = dp1.getData();
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			return null;
@@ -101,7 +101,7 @@ public class Connection {
 		String message = new String(data, StandardCharsets.UTF_8);
 		message = message.replaceAll(new String(new char[] {'\0'}), "");
 		
-		return new Couple<>(message, dp);
+		return new Couple<>(message, dp1);
 	}
 	public synchronized Couple<String, DatagramPacket> receive(@NotNull InetAddress address, int port) {
 		setAddress(address);
