@@ -82,7 +82,7 @@ public class CookieTransfert extends Application {
 					
 					// Get the localFilePath
 					String localFilePath = "file/client/";
-					String[] split = filename.split(File.separator);
+					String[] split = filename.split(File.separator.replace("\\", "\\\\"));
 					
 					if (split.length <= 0)
 						localFilePath += "filename.txt";

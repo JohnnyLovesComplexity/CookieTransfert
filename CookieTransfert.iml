@@ -9,9 +9,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Jetbrains Annotations" level="project" />
-    <orderEntry type="library" name="JUnit" level="project" />
-    <orderEntry type="library" name="BeyondCode" level="project" />
-    <orderEntry type="library" name="EnhancedList" level="project" />
+    <orderEntry type="library" exported="" name="Jetbrains Annotations" level="project" />
+    <orderEntry type="library" exported="" name="JUnit" level="project" />
+    <orderEntry type="library" exported="" name="BeyondCode" level="project" />
+    <orderEntry type="library" exported="" name="EnhancedList" level="project" />
   </component>
 </module>

@@ -1,5 +1,5 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="CookieTransfert">
+  <artifact type="jar" build-on-make="true" name="CookieTransfert">
     <output-path>$PROJECT_DIR$/out/artifacts/CookieTransfert</output-path>
     <root id="archive" name="CookieTransfert.jar">
       <element id="module-output" name="CookieTransfert" />
