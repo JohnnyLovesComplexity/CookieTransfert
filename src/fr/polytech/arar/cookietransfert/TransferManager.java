@@ -111,8 +111,22 @@ public class TransferManager {
 						blockNumbers.add(blockNumberReceived);
 						
 						if (data.length > 4) {
-							byte[] fileData = getFileData(data);
-							Log.println("TransferManager.receiveFile> Answer received: [opCode=" + opCodeReceived + " (" + OPCode.from((byte) opCodeReceived) + ")] [blockNumber=" + blockNumberReceived + "] \"" + new String(fileData, StandardCharsets.UTF_8).replaceAll("\r\n|\n", " ").replaceAll(new String(new char[] {'\0'}), "") + "\"");
+							byte[] fileData = getFileData(data, isLastPacket(result.getY()));
+							
+							String answer_str = new String(fileData, StandardCharsets.UTF_8).replaceAll("\r\n|\n", " ").replaceAll(new String(new char[] {'\0'}), "");
+							boolean isWellEncoded = true;
+							
+							if (answer_str.contains("�"))
+								isWellEncoded = false;
+							else {
+								try {
+									answer_str.getBytes("UTF-8");
+								} catch (UnsupportedEncodingException ex) {
+									isWellEncoded = false;
+								}
+							}
+							
+							Log.println("TransferManager.receiveFile> Answer received: [opCode=" + opCodeReceived + " (" + OPCode.from((byte) opCodeReceived) + ")] [blockNumber=" + blockNumberReceived + "]" + (isWellEncoded ? " \"" + answer_str + "\"" : ""));
 							
 							FileOutputStream fos = null;
 							
@@ -255,7 +269,7 @@ public class TransferManager {
 	 */
 	@SuppressWarnings("ConstantConditions")
 	@NotNull
-	private static byte[] getFileData(@NotNull byte[] data) {
+	private static byte[] getFileData(@NotNull byte[] data, boolean isLast) {
 		if (data == null)
 			throw new NullPointerException();
 		
@@ -272,8 +286,16 @@ public class TransferManager {
 		for (int i = 4; i < data.length; i++)
 			fileData.add(data[i]);
 		
-		// Delete all zero
-		while (fileData.remove(new Byte((byte) 0)));
+		// Delete all zero from the end if it is the last package
+		if (isLast) {
+			boolean reachedContent = false;
+			for (int i = fileData.size() - 1; i >= 0 && !reachedContent; i--) {
+				if (fileData.get(i) == 0)
+					fileData.remove(i);
+				else
+					reachedContent = true;
+			}
+		}
 		
 		// Return the byte array
 		byte[] array = new byte[fileData.size()];

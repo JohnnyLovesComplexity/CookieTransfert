@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -57,10 +58,10 @@ public class CookieTransfert extends Application {
 		inputAdresse.setPromptText("Address");
 		inputFilename.setPromptText("File name");
 		
-		/* /DEBUG\ */
+		/* /DEBUG\ *
 		inputAdresse.setText("192.168.0.19");
-		inputFilename.setText("cookie.txt");
-		/* \DEBUG/ */
+		inputFilename.setText("blackhole.jpg");
+		* \DEBUG/ */
 		
 		setCurrentContent("");
 		loggerView = new WebView();
@@ -68,40 +69,38 @@ public class CookieTransfert extends Application {
 	
 		Log.register(CookieTransfert.this::log);
 
-		submit.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
-				final String serverIP = inputAdresse.getText();
-				final String filename = inputFilename.getText();
-				
-				if(serverIP.equals("") || filename.equals(""))
-					log("Error: Please fill all fields before trying to submit any information");
-				else {
-					// STEP 1 : connexion to server
-					try {
-						InetAddress inetAddress = InetAddress.getByName(serverIP);
-						
-						// Get the localFilePath
-						String localFilePath = "file/client/";
-						String[] split = filename.split(File.separator);
-						
-						if (split.length <= 0)
-							localFilePath += "filename.txt";
-						else
-							localFilePath += split[split.length - 1];
-						
-						final String f_localFilePath = localFilePath;
+		submit.setOnAction(event -> {
+			final String serverIP = inputAdresse.getText();
+			final String filename = inputFilename.getText();
+			
+			if(serverIP.equals("") || filename.equals(""))
+				log("Error: Please fill all fields before trying to submit any information");
+			else {
+				// STEP 1 : connexion to server
+				try {
+					InetAddress inetAddress = InetAddress.getByName(serverIP);
+					
+					// Get the localFilePath
+					String localFilePath = "file/client/";
+					String[] split = filename.split(File.separator);
+					
+					if (split.length <= 0)
+						localFilePath += "filename.txt";
+					else
+						localFilePath += split[split.length - 1];
+					
+					final String f_localFilePath = localFilePath;
 
-						// STEP 2: sending request RRQ to pumpkin
-						new Thread(() -> {
-							ErrorCode code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
-							Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
-						}).start();
-					}
-					catch(UnknownHostException e) {
-						e.printStackTrace();
-						log("Error: Invalid address");
-					}
+					// STEP 2: sending request RRQ to pumpkin
+					new Thread(() -> {
+						ErrorCode code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
+						SoundManager.play(SoundManager.BELL);
+						Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
+					}).start();
+				}
+				catch(UnknownHostException e) {
+					e.printStackTrace();
+					log("Error: Invalid address");
 				}
 			}
 		});
@@ -116,6 +115,7 @@ public class CookieTransfert extends Application {
 		root.setPrefSize(600,600);
 		primaryStage.setScene(new Scene(root));
 		primaryStage.setTitle("[CLIENT STF] CookieTransfert");
+		primaryStage.getIcons().add(new Image(CookieTransfert.class.getResourceAsStream("/images/logo64.png")));
 		primaryStage.show();
 
 		Log.println("Client ready to process!");

@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 public class Connection {
 	
-	public static final int MAX_DATA_BYTE_LENGTH = 1024;
+	public static final int MAX_DATA_BYTE_LENGTH = 512;
 	
 	@Nullable
 	private DatagramSocket datagramSocket;
