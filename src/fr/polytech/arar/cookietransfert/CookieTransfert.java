@@ -2,17 +2,15 @@ package fr.polytech.arar.cookietransfert;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -23,7 +21,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.function.Function;
 
 public class CookieTransfert extends Application {
 	
@@ -104,16 +101,33 @@ public class CookieTransfert extends Application {
 				}
 			}
 		});
-		
+
+		HBox hbox = new HBox();
+		Image image = new Image(CookieTransfert.class.getResourceAsStream("/images/logo64.png"));
+		Label label1 = new Label();
+		label1.setGraphic(new ImageView(image));
+		hbox.setSpacing(10);
+		hbox.getChildren().add((label1));
+
 		GridPane gridPane = new GridPane();
-		gridPane.add(inputAdresse,0,0);
-		gridPane.add(inputFilename,1,0);
-		gridPane.add(submit,2,0);
-		
+		gridPane.add(hbox,0,0);
+		gridPane.add(inputAdresse,1,0);
+		gridPane.add(inputFilename,2,0);
+		gridPane.add(submit,3,0);
+
+		gridPane.setHgap(10); //horizontal gap in pixels => that's what you are asking for
+		gridPane.setVgap(10); //vertical gap in pixels
+		gridPane.setPadding(new Insets(10, 10, 10, 10));
+
 		VBox root = new VBox(20, gridPane, loggerView);
-		
+		root.setStyle("-fx-background-color: #295396");
+
+		submit.setId("submit");
+
 		root.setPrefSize(600,600);
-		primaryStage.setScene(new Scene(root));
+		Scene scene = new Scene(root);
+		scene.getStylesheets().add(CookieTransfert.class.getResource("/css/style.css").toExternalForm());
+		primaryStage.setScene(scene);
 		primaryStage.setTitle("[CLIENT STF] CookieTransfert");
 		primaryStage.getIcons().add(new Image(CookieTransfert.class.getResourceAsStream("/images/logo64.png")));
 		primaryStage.show();
