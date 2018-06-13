@@ -10,7 +10,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -90,7 +89,7 @@ public class CookieTransfert extends Application {
 
 					// STEP 2: sending request RRQ to pumpkin
 					new Thread(() -> {
-						ErrorCode code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
+						ValueCode code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
 						SoundManager.play(SoundManager.BELL);
 						Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
 					}).start();

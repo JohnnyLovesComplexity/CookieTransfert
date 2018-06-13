@@ -6,16 +6,12 @@ import fr.berger.enhancedlist.lexicon.LexiconBuilder;
 import fr.polytech.arar.cookietransfert.exceptions.TFTPException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.naming.OperationNotSupportedException;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Arrays;
 
 public class TransferManager {
@@ -32,14 +28,14 @@ public class TransferManager {
 	 * @return
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public static ErrorCode receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static ValueCode receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
 		// Test parameters
 		if (localFile == null)
 			throw new NullPointerException("localFile must not be null");
 		
 		if (localFile.exists()) {
 			if (!localFile.delete())
-				return ErrorCode.CANNOT_DELETE_LOCAL_FILE;
+				return ValueCode.CANNOT_DELETE_LOCAL_FILE;
 		}
 		
 		if (distantFilePath == null)
@@ -92,8 +88,12 @@ public class TransferManager {
 					int blockNumberReceived = getBlockNumber(data);
 					
 					if (opCodeReceived != OPCode.DATA.getCode()) {
-						if (opCodeReceived == OPCode.ERROR.getCode())
+						if (opCodeReceived == OPCode.ERROR.getCode()){
+							int error = getErrorCode(data);
+							Log.println("TransferManager.receiveFile> ERROR : The server return an error code. Please make sure that the filename you typed is correct.");
+							Log.println("TransferManager.receiveFile> ERROR : " + ErrorCode.errorMessage(error));
 							throw new TFTPException("The server return an error code. Please make sure that the filename you typed is correct.");
+						}
 						else
 							throw new RuntimeException("Receive request " + opCodeReceived + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
 					}
@@ -101,7 +101,7 @@ public class TransferManager {
 
 					/*if (header[1] == OPCode.ERROR.getCode()) {
 						String errorCode = new String(data, 3, 1);
-						//TODO : treat errors ErrorCode
+						//TODO : treat errors ValueCode
 					} else if (header[1] == OPCode.DATA.getCode()) {
 
 					}*/
@@ -136,7 +136,7 @@ public class TransferManager {
 								fos.write(fileData);
 							} catch (IOException e) {
 								e.printStackTrace();
-								return ErrorCode.CANNOT_WRITE_LOCAL_FILE;
+								return ValueCode.CANNOT_WRITE_LOCAL_FILE;
 							}
 							// Finally, close the file output stream
 							finally {
@@ -172,21 +172,21 @@ public class TransferManager {
 					repetition++;
 					
 					if (repetition >= ERROR_LIMIT)
-						return ErrorCode.TRANSFER_ERROR;
+						return ValueCode.TRANSFER_ERROR;
 				}
 			}
 		} while (result != null && !isLastPacket(result.getY()));
 		
-		return ErrorCode.OK;
+		return ValueCode.OK;
 	}
 	@SuppressWarnings("ConstantConditions")
-	public static ErrorCode receiveFile(@Nullable String localFilePath, @NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static ValueCode receiveFile(@Nullable String localFilePath, @NotNull String distantFilePath, @NotNull InetAddress address) {
 		File f = new File(localFilePath);
 		
 		return receiveFile(f, distantFilePath, address);
 	}
 	@SuppressWarnings("ConstantConditions")
-	public static ErrorCode receiveFile(@NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static ValueCode receiveFile(@NotNull String distantFilePath, @NotNull InetAddress address) {
 		if (distantFilePath == null || "".equals(distantFilePath))
 			throw new IllegalArgumentException("Distant file path not valid.");
 		
@@ -243,6 +243,17 @@ public class TransferManager {
 		
 		byte[] opCodesFormatted = { data[0], data[1] };
 		return ByteConversion.convertBytesToInt(opCodesFormatted) /*((opCodesFormatted[0] & 0xff) << 8) | (opCodesFormatted[1] & 0xFF)*/;
+	}
+
+	private static int getErrorCode(@NotNull byte[] data) {
+		if (data == null)
+			throw new NullPointerException();
+
+		if (data.length < 2)
+			throw new IllegalArgumentException("data must be greater or equal to 2 bytes at least.");
+
+		byte[] errorCodesFormatted = { data[2], data[3] };
+		return ByteConversion.convertBytesToInt(errorCodesFormatted);
 	}
 	
 	/**

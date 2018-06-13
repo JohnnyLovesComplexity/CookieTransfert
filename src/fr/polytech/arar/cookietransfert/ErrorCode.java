@@ -2,31 +2,53 @@ package fr.polytech.arar.cookietransfert;
 
 import org.jetbrains.annotations.Contract;
 
+import java.util.ArrayList;
+
+//RFC1350
 public enum ErrorCode {
-	OK(0),
-	TRANSFER_ERROR(1),
-	ADDRESS_NOT_REACHABLE(2),
-	CANNOT_SEND_ACK(3),
-	LOCAL_ERROR(-1),
-	CANNOT_CREATE_LOCAL_FILE(-2),
-	CANNOT_READ_LOCAL_FILE(-3),
-	CANNOT_WRITE_LOCAL_FILE(-4),
-	CANNOT_DELETE_LOCAL_FILE(-5);
-	
-	private int code;
-	
-	ErrorCode(int code) {
-		setCode(code);
-	}
-	
-	/* GETTER & SETTER */
-	
-	@Contract(pure = true)
-	public int getCode() {
-		return code;
-	}
-	
-	private void setCode(int code) {
-		this.code = code;
-	}
+
+        NOT_DEFINED(0,"NOT_DEFINED"),
+        FILE_NOT_FOUND(1,"FILE_NOT_FOUND"),
+        ACCESS_VIOLATION(2,"ACCESS_VIOLATION"),
+        ALLOCATION_EXCEEDED(3,"ALLOCATION_EXCEEDED"),
+        ILLEGAL_TFTP_OPERATION(4,"ILLEGAL_TFTP_OPERATION"),
+        UNKNOWN_TRANSFERT_ID(5,"UNKNOWN_TRANSFERT_ID"),
+        FILE_ALREADY_EXISTS(6,"FILE_ALREADY_EXISTS"),
+        NO_SUCH_USER(7,"NO_SUCH_USER");
+
+        private int code;
+        private String mess;
+
+        ErrorCode(int code, String mess) {
+            setCode(code);
+            setMess(mess);
+        }
+
+        /* GETTER & SETTER */
+
+        @Contract(pure = true)
+        public int getCode() {
+            return code;
+        }
+
+    public String getMess() {
+        return mess;
+    }
+
+    private void setCode(int code) {
+            this.code = code;
+        }
+
+    public void setMess(String mess) {
+        this.mess = mess;
+    }
+
+    public static String errorMessage(int num){
+            ErrorCode[] values = ErrorCode.values();
+        for (ErrorCode value : values) {
+            if (value.getCode() == num)
+                return  value.getMess();
+        }
+          return "UNKNOWN_CODE";
+    }
 }
