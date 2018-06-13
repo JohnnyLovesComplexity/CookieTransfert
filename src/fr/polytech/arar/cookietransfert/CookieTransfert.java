@@ -17,6 +17,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
@@ -57,7 +58,7 @@ public class CookieTransfert extends Application {
 		inputFilename.setPromptText("File name");
 		
 		/* /DEBUG\ */
-		inputAdresse.setText("192.168.43.32");
+		inputAdresse.setText("192.168.0.19");
 		inputFilename.setText("cookie.txt");
 		/* \DEBUG/ */
 		
@@ -79,10 +80,21 @@ public class CookieTransfert extends Application {
 					// STEP 1 : connexion to server
 					try {
 						InetAddress inetAddress = InetAddress.getByName(serverIP);
+						
+						// Get the localFilePath
+						String localFilePath = "file/client/";
+						String[] split = filename.split(File.separator);
+						
+						if (split.length <= 0)
+							localFilePath += "filename.txt";
+						else
+							localFilePath += split[split.length - 1];
+						
+						final String f_localFilePath = localFilePath;
 
 						// STEP 2: sending request RRQ to pumpkin
 						new Thread(() -> {
-							ErrorCode code = TransferManager.receiveFile("filename.txt", filename, inetAddress);
+							ErrorCode code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
 							Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
 						}).start();
 					}

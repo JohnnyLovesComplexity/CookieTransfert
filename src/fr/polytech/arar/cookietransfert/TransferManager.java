@@ -3,6 +3,7 @@ package fr.polytech.arar.cookietransfert;
 import fr.berger.enhancedlist.Couple;
 import fr.berger.enhancedlist.lexicon.Lexicon;
 import fr.berger.enhancedlist.lexicon.LexiconBuilder;
+import fr.polytech.arar.cookietransfert.exceptions.TFTPException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -50,15 +51,6 @@ public class TransferManager {
 		if (address == null)
 			throw new NullPointerException("address must not be null");
 		
-		// Test if the address is reachable
-		/*try {
-			if (!address.isReachable(500))
-				throw new IllegalArgumentException("The address " + address.getHostAddress() + " is not reachable.");
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("The address " + address.getHostAddress() + " is not reachable.");
-		}*/
-		
 		// Create a list of block number
 		Lexicon<Integer> blockNumbers = new LexiconBuilder<>(Integer.class)
 				.setAcceptNullValues(false)
@@ -99,8 +91,12 @@ public class TransferManager {
 					int opCodeReceived = getOpCode(data);
 					int blockNumberReceived = getBlockNumber(data);
 					
-					if (opCodeReceived != OPCode.DATA.getCode())
-						throw new RuntimeException("Receive request " + opCodeReceived + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
+					if (opCodeReceived != OPCode.DATA.getCode()) {
+						if (opCodeReceived == OPCode.ERROR.getCode())
+							throw new TFTPException("The server return an error code. Please make sure that the filename you typed is correct.");
+						else
+							throw new RuntimeException("Receive request " + opCodeReceived + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
+					}
 
 
 					/*if (header[1] == OPCode.ERROR.getCode()) {
@@ -151,7 +147,7 @@ public class TransferManager {
 			
 			if (result != null) {
 				// Send ACK
-				byte[] blockNumbersBytes = {(byte) (blockNumbers.last() & 0xFF), (byte) ((blockNumbers.last() >> 8) & 0xFF)};
+				byte[] blockNumbersBytes = {(byte) ((blockNumbers.last() >> 8) & 0xFF), (byte) (blockNumbers.last() & 0xFF)};
 				byte[] ACK = {0, OPCode.ACK.getCode(), blockNumbersBytes[0], blockNumbersBytes[1]};
 				Log.println("TransferManager.receiveFile> Send ACK = " + Arrays.toString(ACK));
 				try {
@@ -232,7 +228,7 @@ public class TransferManager {
 			throw new IllegalArgumentException("data must be greater or equal to 2 bytes at least.");
 		
 		byte[] opCodesFormatted = { data[0], data[1] };
-		return ((opCodesFormatted[0] & 0xff) << 8) | (opCodesFormatted[1] & 0xFF);
+		return ByteConversion.convertBytesToInt(opCodesFormatted) /*((opCodesFormatted[0] & 0xff) << 8) | (opCodesFormatted[1] & 0xFF)*/;
 	}
 	
 	/**
@@ -249,7 +245,7 @@ public class TransferManager {
 			throw new IllegalArgumentException("data must be greater or equal to 4 bytes at least.");
 		
 		byte[] blockNumberFormatted = { data[2], data[3] };
-		return ((blockNumberFormatted[0] & 0xff) << 8) | (blockNumberFormatted[1] & 0xFF);
+		return ByteConversion.convertBytesToInt(blockNumberFormatted)/*((blockNumberFormatted[0] & 0xff) << 8) | (blockNumberFormatted[1] & 0xFF)*/;
 	}
 	
 	/**
@@ -269,9 +265,22 @@ public class TransferManager {
 		if (data.length == 4)
 			return new byte[0];
 		
-		byte[] fileData = new byte[data.length - 4];
-		System.arraycopy(data, 4, fileData, 0, data.length - 4);
-		return fileData;
+		Lexicon<Byte> fileData = new LexiconBuilder<>(Byte.class)
+				.setAcceptNullValues(false)
+				.createLexicon();
+		
+		for (int i = 4; i < data.length; i++)
+			fileData.add(data[i]);
+		
+		// Delete all zero
+		while (fileData.remove(new Byte((byte) 0)));
+		
+		// Return the byte array
+		byte[] array = new byte[fileData.size()];
+		for (int i = 0, maxi = fileData.size(); i < maxi; i++)
+			array[i] = fileData.get(i);
+		
+		return array;
 	}
 	
 	/**
