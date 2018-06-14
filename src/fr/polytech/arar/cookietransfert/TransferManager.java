@@ -8,9 +8,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.naming.OperationNotSupportedException;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -28,7 +32,7 @@ public class TransferManager {
 	 * @return
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public static ValueCode receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static ValueCode receiveFile(@NotNull File localFile, @NotNull String distantFilePath, @NotNull InetAddress address) throws SocketTimeoutException {
 		// Test parameters
 		if (localFile == null)
 			throw new NullPointerException("localFile must not be null");
@@ -78,6 +82,12 @@ public class TransferManager {
 			
 			// Receive a new block of data
 			result = co.receive();
+			
+			if (result == null) {
+				Log.println("TransferManager.receiveFile> Connection lost");
+				return ValueCode.TRANSFER_ERROR;
+			}
+			
 			Log.println("TransferManager.receiveFile> Received from " + result.getY().getAddress().getHostAddress() + " \"" + result.getY().getAddress().getCanonicalHostName() + "\" with port " + result.getY().getPort() + ". The size of the answer is " + result.getY().getLength() + " byte(s).");
 			
 			if (result != null && result.getY() != null) {
@@ -172,13 +182,13 @@ public class TransferManager {
 		return ValueCode.OK;
 	}
 	@SuppressWarnings("ConstantConditions")
-	public static ValueCode receiveFile(@Nullable String localFilePath, @NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static ValueCode receiveFile(@Nullable String localFilePath, @NotNull String distantFilePath, @NotNull InetAddress address) throws SocketTimeoutException {
 		File f = new File(localFilePath);
 		
 		return receiveFile(f, distantFilePath, address);
 	}
 	@SuppressWarnings("ConstantConditions")
-	public static ValueCode receiveFile(@NotNull String distantFilePath, @NotNull InetAddress address) {
+	public static ValueCode receiveFile(@NotNull String distantFilePath, @NotNull InetAddress address) throws SocketTimeoutException {
 		if (distantFilePath == null || "".equals(distantFilePath))
 			throw new IllegalArgumentException("Distant file path not valid.");
 		

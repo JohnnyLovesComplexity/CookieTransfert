@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -91,9 +92,18 @@ public class CookieTransfert extends Application {
 
 					// STEP 2: sending request RRQ to pumpkin
 					new Thread(() -> {
-						ValueCode code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
-						SoundManager.play(SoundManager.BELL);
-						Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
+						ValueCode code = null;
+						try {
+							code = TransferManager.receiveFile(f_localFilePath, filename, inetAddress);
+							
+							if (code == ValueCode.OK) {
+								SoundManager.play(SoundManager.BELL);
+								Log.println("CookieTransfert> Receive file returned " + code.getCode() + " (" + code.name() + ")");
+							}
+						} catch (SocketTimeoutException e) {
+							Log.println("CookieTransfert> Connection lost.");
+							//e.printStackTrace();
+						}
 					}).start();
 				}
 				catch(UnknownHostException e) {

@@ -3,14 +3,10 @@ package fr.polytech.arar.cookietransfert;
 import fr.berger.enhancedlist.Couple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.naming.OperationNotSupportedException;
-import java.io.File;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 public class Connection {
@@ -80,7 +76,7 @@ public class Connection {
 	}
 	
 	@Nullable
-	public synchronized Couple<String, DatagramPacket> receive() {
+	public synchronized Couple<String, DatagramPacket> receive() throws SocketTimeoutException {
 		byte[] data = new byte[MAX_DATA_BYTE_LENGTH + 4];
 		
 		DatagramPacket dp1 = null;
@@ -89,6 +85,7 @@ public class Connection {
 			if (getDatagramSocket() == null)
 				setDatagramSocket(new DatagramSocket());
 			dp1 = new DatagramPacket(data, data.length);
+			getDatagramSocket().setSoTimeout(3000);
 			getDatagramSocket().receive(dp1);
 			setLastReceivedPacket(dp1);
 		} catch (IOException ex) {
@@ -102,16 +99,16 @@ public class Connection {
 		
 		return new Couple<>(message, dp1);
 	}
-	public synchronized Couple<String, DatagramPacket> receive(@NotNull InetAddress address, int port) {
+	public synchronized Couple<String, DatagramPacket> receive(@NotNull InetAddress address, int port) throws SocketTimeoutException {
 		setAddress(address);
 		setPort(port);
 		return receive();
 	}
-	public synchronized Couple<String, DatagramPacket> receive(@NotNull InetAddress address) {
+	public synchronized Couple<String, DatagramPacket> receive(@NotNull InetAddress address) throws SocketTimeoutException {
 		setAddress(address);
 		return receive();
 	}
-	public synchronized Couple<String, DatagramPacket> receive(int port) {
+	public synchronized Couple<String, DatagramPacket> receive(int port) throws SocketTimeoutException {
 		setPort(port);
 		return receive();
 	}
