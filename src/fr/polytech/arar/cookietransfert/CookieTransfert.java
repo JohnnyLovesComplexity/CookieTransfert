@@ -2,8 +2,6 @@ package fr.polytech.arar.cookietransfert;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -11,7 +9,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -119,11 +119,11 @@ public class CookieTransfert extends Application {
 		hbox2.setSpacing(10);
 		hbox2.getChildren().add((mute));
 
-		mute.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
+		mute.setOnAction(event -> {
+			if (SoundManager.toggleSoundActivated())
+				mute.setGraphic(new ImageView(volumeOn));
+			else
 				mute.setGraphic(new ImageView(volumeOff));
-			}
 		});
 
 		GridPane gridPane = new GridPane();

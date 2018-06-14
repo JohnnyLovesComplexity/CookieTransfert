@@ -1,7 +1,6 @@
 package fr.polytech.arar.cookietransfert;
 
 import javax.sound.sampled.*;
-import java.io.File;
 import java.io.IOException;
 
 public class SoundManager {
@@ -31,5 +30,10 @@ public class SoundManager {
 	
 	public static void setSoundActivated(boolean soundActivated) {
 		SoundManager.soundActivated = soundActivated;
+	}
+	
+	public static boolean toggleSoundActivated() {
+		setSoundActivated(!isSoundActivated());
+		return isSoundActivated();
 	}
 }
