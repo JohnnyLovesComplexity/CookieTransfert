@@ -2,6 +2,8 @@ package fr.polytech.arar.cookietransfert;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -108,11 +110,28 @@ public class CookieTransfert extends Application {
 		hbox.setSpacing(10);
 		hbox.getChildren().add((label1));
 
+		HBox hbox2 = new HBox();
+		Image volumeOn = new Image(CookieTransfert.class.getResourceAsStream("/images/volume_on.png"));
+		Image volumeOff = new Image(CookieTransfert.class.getResourceAsStream("/images/volume_off.png"));
+		Button mute = new Button();
+		mute.setGraphic(new ImageView(volumeOn));
+		mute.setId("mute");
+		hbox2.setSpacing(10);
+		hbox2.getChildren().add((mute));
+
+		mute.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				mute.setGraphic(new ImageView(volumeOff));
+			}
+		});
+
 		GridPane gridPane = new GridPane();
 		gridPane.add(hbox,0,0);
 		gridPane.add(inputAdresse,1,0);
 		gridPane.add(inputFilename,2,0);
 		gridPane.add(submit,3,0);
+		gridPane.add(mute,4,0);
 
 		gridPane.setHgap(10); //horizontal gap in pixels => that's what you are asking for
 		gridPane.setVgap(10); //vertical gap in pixels

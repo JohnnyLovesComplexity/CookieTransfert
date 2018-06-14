@@ -98,14 +98,6 @@ public class TransferManager {
 							throw new RuntimeException("Receive request " + opCodeReceived + " instead of " + OPCode.DATA.getCode() + " (" + OPCode.DATA.getRepresentation() + ") to receive the file.");
 					}
 
-
-					/*if (header[1] == OPCode.ERROR.getCode()) {
-						String errorCode = new String(data, 3, 1);
-						//TODO : treat errors ValueCode
-					} else if (header[1] == OPCode.DATA.getCode()) {
-
-					}*/
-					
 					// If the blockNumber is new, add the data block. If not, resend a ACK
 					if (!blockNumbers.contains(blockNumberReceived)) {
 						blockNumbers.add(blockNumberReceived);
